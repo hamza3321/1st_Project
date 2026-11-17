@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pulse – User Activity Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f4f6fb;--card:#fff;--ink:#14213d;--mute:#6b7690;--line:#e3e8f2;--acc:#3a5bff;--h0:#e9eefb;--h1:#9db0ff;--h2:#ff9f5a;--h3:#e8334a;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f1526;--card:#171f36;--ink:#eaf0ff;--mute:#93a0c0;--line:#27324f;--acc:#7a93ff;--h0:#202a46}}
+:root[data-theme="dark"]{--bg:#0f1526;--card:#171f36;--ink:#eaf0ff;--mute:#93a0c0;--line:#27324f;--acc:#7a93ff;--h0:#202a46}
+*{box-sizing:border-box}html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.5 "Bricolage Grotesque",system-ui,sans-serif}
+.wrap{max-width:1040px;margin:0 auto;padding:28px 18px 80px}
+h1{font-size:clamp(34px,6vw,56px);line-height:1.02;margin:0 0 10px;font-weight:800;letter-spacing:-.03em}
+h2{font-size:22px;margin:0 0 4px;font-weight:600}
+p.lead{color:var(--mute);max-width:56ch;margin:0 0 22px}
+.sec{margin-top:44px}.sub{color:var(--mute);font-size:14px;margin:0 0 14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px}
+.grid{display:grid;gap:14px}.g4{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))}.g2{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.stat b{display:block;font-size:34px;font-weight:800;letter-spacing:-.02em}.stat span{color:var(--mute);font-size:14px}
+button{font:inherit;cursor:pointer;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:9px 16px}
+button.p{background:var(--acc);border-color:var(--acc);color:#fff;font-weight:600}
+button:focus-visible,a:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+.bar{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.demo{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.plan{padding:20px;border:1px solid var(--line);border-radius:14px;background:var(--card)}
+.plan h3{margin:0}.plan .pr{font-size:30px;font-weight:800;margin:6px 0 12px}
+.bars{display:flex;align-items:flex-end;gap:4px;height:130px}
+.bars i{flex:1;background:var(--acc);border-radius:4px 4px 0 0;min-height:2px;opacity:.9}
+.axis{display:flex;justify-content:space-between;color:var(--mute);font-size:12px;margin-top:6px}
+.hm{display:grid;grid-template-columns:34px repeat(24,1fr);gap:3px;font-size:11px;color:var(--mute);overflow-x:auto;min-width:0}
+.hm div{aspect-ratio:1;border-radius:3px;min-width:12px}.hm .l{aspect-ratio:auto;display:flex;align-items:center}
+.hmw{overflow-x:auto}.hmw .hm{min-width:560px}
+table{width:100%;border-collapse:collapse;font-size:14px}td,th{text-align:left;padding:7px 4px;border-bottom:1px solid var(--line)}
+td:last-child,th:last-child{text-align:right}code,pre{font-family:ui-monospace,Menlo,monospace;font-size:13px}
+pre{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:14px;overflow-x:auto;margin:0}
+.feed{max-height:220px;overflow:auto;font-size:14px}.feed div{padding:5px 0;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:10px}
+.feed span{color:var(--mute);white-space:nowrap}
+#hmCanvas{position:absolute;left:0;top:0;pointer-events:none;z-index:50;display:none;opacity:.85}
+.legend{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--mute)}.legend i{width:120px;height:8px;border-radius:4px;background:linear-gradient(90deg,#3a5bff,#19c3a0,#ffd24a,#ff7a3d,#e8334a)}
+</style>
+</head>
+<body>
+<canvas id="hmCanvas"></canvas>
+<div class="wrap">
+  <h1>Pulse</h1>
+  <p class="lead">A tiny JavaScript tracker that records clicks, scrolling and time on page, then shows them as a live dashboard and heatmap. Click around this page — it's tracking you.</p>
+
+  <div class="plan-area">
+    <h2>Try it</h2>
+    <p class="sub">Click these buttons and cards, then see the heatmap build up below.</p>
+    <div class="demo">
+      <div class="plan"><h3>Starter</h3><div class="pr">$9</div><button id="b1">Choose Starter</button></div>
+      <div class="plan"><h3>Team</h3><div class="pr">$29</div><button id="b2" class="p">Choose Team</button></div>
+      <div class="plan"><h3>Scale</h3><div class="pr">$79</div><button id="b3">Contact sales</button></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <h2>Dashboard</h2>
+    <p class="sub">Stored in this browser. Send events to your server by setting <code>endpoint</code>.</p>
+    <div class="grid g4" id="stats"></div>
+    <div class="bar">
+      <button class="p" id="tHeat">Show click heatmap on page</button>
+      <button id="seed">Add sample data</button>
+      <button id="exp">Export JSON</button>
+      <button id="clr">Clear data</button>
+      <button id="theme">Toggle theme</button>
+    </div>
+  </div>
+
+  <div class="sec grid g2">
+    <div class="card"><h2>Activity, last 24 hours</h2><p class="sub">Events per hour</p><div class="bars" id="bars"></div><div class="axis"><span>24h ago</span><span>now</span></div></div>
+    <div class="card"><h2>Most clicked elements</h2><p class="sub">Grouped by CSS selector</p><table id="top"></table></div>
+  </div>
+
+  <div class="sec card">
+    <h2>When users are active</h2>
+    <p class="sub">Events by weekday and hour. Darker means busier.</p>
+    <div class="hmw"><div class="hm" id="hm"></div></div>
+    <div class="legend" style="margin-top:12px">Quiet <i></i> Busy</div>
+  </div>
+
+  <div class="sec grid g2">
+    <div class="card"><h2>Live feed</h2><p class="sub">Latest events</p><div class="feed" id="feed"></div></div>
+    <div class="card"><h2>Add it to your app</h2><p class="sub">Copy the tracker script, then one call:</p>
+<pre>&lt;script src="tracker.js"&gt;&lt;/script&gt;
+&lt;script&gt;
+  Pulse.init({
+    endpoint: "/api/track" // optional
+  });
+&lt;/script&gt;
+
+// Read data any time
+Pulse.getData();
+// Custom event
+Pulse.track("signup", { plan: "team" });</pre></div>
+  </div>
+</div>
+
+<script>
+/* ============ Pulse tracker (drop-in, no dependencies) ============ */
+const Pulse=(()=>{
+  const cfg={key:"pulse_events",endpoint:null,max:5000};
+  let mem=[],subs=[];
+  const sid=(()=>{try{let s=sessionStorage.getItem("pulse_sid");if(!s){s=Math.random().toString(36).slice(2,10);sessionStorage.setItem("pulse_sid",s)}return s}catch(e){return "s"+Math.random().toString(36).slice(2,8)}})();
+  const getData=()=>{try{return JSON.parse(localStorage.getItem(cfg.key))||[]}catch(e){return mem}};
+  const setData=d=>{mem=d;try{localStorage.setItem(cfg.key,JSON.stringify(d))}catch(e){}};
+  const sel=el=>{if(!el||!el.tagName)return"?";let s=el.tagName.toLowerCase();if(el.id)return s+"#"+el.id;if(el.classList&&el.classList[0])s+="."+el.classList[0];return s};
+  function push(ev,silent){const d=getData();d.push(ev);if(d.length>cfg.max)d.splice(0,d.length-cfg.max);setData(d);
+    if(cfg.endpoint&&!silent){try{navigator.sendBeacon(cfg.endpoint,JSON.stringify(ev))}catch(e){}}
+    if(!silent)subs.forEach(f=>f(ev))}
+  const track=(type,extra)=>push(Object.assign({t:Date.now(),type,sid,page:location.pathname},extra||{}));
+  function init(o){Object.assign(cfg,o||{});const t0=Date.now();let maxScroll=0,sent={};
+    track("view",{ref:document.referrer});
+    document.addEventListener("click",e=>{const W=document.documentElement.scrollWidth,H=document.documentElement.scrollHeight;
+      track("click",{x:+(e.pageX/W).toFixed(4),y:Math.round(e.pageY),el:sel(e.target)})},true);
+    addEventListener("scroll",()=>{const H=document.documentElement.scrollHeight-innerHeight;if(H<=0)return;
+      const p=Math.round(scrollY/H*100);maxScroll=Math.max(maxScroll,p);
+      [25,50,75,100].forEach(m=>{if(p>=m&&!sent[m]){sent[m]=1;track("scroll",{depth:m})}})},{passive:true});
+    const leave=()=>{if(sent.left)return;sent.left=1;push({t:Date.now(),type:"leave",sid,page:location.pathname,dur:Math.round((Date.now()-t0)/1000),depth:maxScroll},true)};
+    addEventListener("pagehide",leave);
+    document.addEventListener("visibilitychange",()=>{if(document.hidden){leave();sent.left=0}});
+  }
+  return{init,track,getData,clear:()=>setData([]),onEvent:f=>subs.push(f),push,sid};
+})();
+
+/* ============ Dashboard (reads Pulse.getData()) ============ */
+const $=id=>document.getElementById(id);
+const DAYS=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+const ramp=n=>`color-mix(in srgb, var(--h1) ${Math.round(n*100)}%, var(--h0))`;
+function heatColor(n){return n<=0?"var(--h0)":n<.34?`color-mix(in srgb, #9db0ff ${40+n*150}%, var(--h0))`:n<.67?"#ff9f5a":"#e8334a"}
+
+function render(){
+  const d=Pulse.getData(),clicks=d.filter(e=>e.type==="click"),views=d.filter(e=>e.type==="view");
+  const sessions=new Set(d.map(e=>e.sid)).size,leaves=d.filter(e=>e.type==="leave");
+  const avg=leaves.length?Math.round(leaves.reduce((a,e)=>a+e.dur,0)/leaves.length):0;
+  const depth=leaves.length?Math.round(leaves.reduce((a,e)=>a+(e.depth||0),0)/leaves.length):0;
+  const stat=(v,l)=>`<div class="card stat"><b>${v}</b><span>${l}</span></div>`;
+  $("stats").innerHTML=stat(sessions,"Sessions")+stat(views.length,"Page views")+stat(clicks.length,"Clicks")+stat(avg+"s","Avg. time on page")+stat(depth+"%","Avg. scroll depth");
+
+  // 24h bars
+  const now=Date.now(),b=new Array(24).fill(0);
+  d.forEach(e=>{const h=Math.floor((now-e.t)/36e5);if(h>=0&&h<24)b[23-h]++});
+  const mx=Math.max(1,...b);$("bars").innerHTML=b.map((v,i)=>`<i title="${v} events" style="height:${v/mx*100}%"></i>`).join("");
+
+  // top elements
+  const c={};clicks.forEach(e=>c[e.el]=(c[e.el]||0)+1);
+  const rows=Object.entries(c).sort((a,b)=>b[1]-a[1]).slice(0,6);
+  $("top").innerHTML=rows.length?rows.map(([k,v])=>`<tr><td><code>${k.replace(/</g,"&lt;")}</code></td><td>${v}</td></tr>`).join(""):"<tr><td>No clicks yet. Click anything on this page.</td><td></td></tr>";
+
+  // weekday x hour heatmap
+  const g=Array.from({length:7},()=>new Array(24).fill(0));
+  d.forEach(e=>{const t=new Date(e.t);g[t.getDay()][t.getHours()]++});
+  const gm=Math.max(1,...g.flat());let h='<div class="l"></div>'+[...Array(24).keys()].map(i=>`<div class="l" style="justify-content:center;aspect-ratio:auto">${i%3===0?i:""}</div>`).join("");
+  g.forEach((r,i)=>{h+=`<div class="l">${DAYS[i]}</div>`+r.map((v,j)=>`<div title="${DAYS[i]} ${j}:00 – ${v} events" style="background:${heatColor(v/gm)}"></div>`).join("")});
+  $("hm").innerHTML=h;
+
+  // feed
+  $("feed").innerHTML=d.slice(-30).reverse().map(e=>{
+    const t=new Date(e.t).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit",second:"2-digit"});
+    const w=e.type==="click"?"Clicked "+e.el:e.type==="scroll"?"Scrolled to "+e.depth+"%":e.type==="view"?"Viewed "+e.page:e.type==="leave"?"Left after "+e.dur+"s":e.type;
+    return`<div>${w.replace(/</g,"&lt;")}<span>${t}</span></div>`}).join("")||"<div>Waiting for activity…</div>";
+  if(heatOn)drawHeat();
+}
+
+/* ============ Click heatmap overlay ============ */
+let heatOn=false;const cv=$("hmCanvas");
+function drawHeat(){
+  const W=document.documentElement.scrollWidth,H=document.documentElement.scrollHeight;
+  cv.width=W;cv.height=H;cv.style.width=W+"px";cv.style.height=H+"px";
+  const ctx=cv.getContext("2d"),r=34;ctx.clearRect(0,0,W,H);
+  Pulse.getData().filter(e=>e.type==="click").forEach(e=>{
+    const x=e.x*W,y=e.y,gr=ctx.createRadialGradient(x,y,0,x,y,r);
+    gr.addColorStop(0,"rgba(0,0,0,.18)");gr.addColorStop(1,"rgba(0,0,0,0)");ctx.fillStyle=gr;ctx.fillRect(x-r,y-r,r*2,r*2)});
+  // colorize by alpha
+  const pal=document.createElement("canvas");pal.width=256;pal.height=1;const pc=pal.getContext("2d"),lg=pc.createLinearGradient(0,0,256,0);
+  [[0,"#3a5bff"],[.3,"#19c3a0"],[.55,"#ffd24a"],[.8,"#ff7a3d"],[1,"#e8334a"]].forEach(s=>lg.addColorStop(s[0],s[1]));pc.fillStyle=lg;pc.fillRect(0,0,256,1);
+  const pd=pc.getImageData(0,0,256,1).data,img=ctx.getImageData(0,0,W,H),px=img.data;
+  for(let i=3;i<px.length;i+=4){const a=px[i];if(a){const k=Math.min(255,a*3)*4;px[i-3]=pd[k];px[i-2]=pd[k+1];px[i-1]=pd[k+2];px[i]=Math.min(235,a*3+40)}}
+  ctx.putImageData(img,0,0);
+}
+$("tHeat").onclick=function(){heatOn=!heatOn;cv.style.display=heatOn?"block":"none";this.textContent=heatOn?"Hide click heatmap":"Show click heatmap on page";if(heatOn)drawHeat()};
+
+/* ============ Sample data (clusters around the demo buttons) ============ */
+function seed(){
+  const W=document.documentElement.scrollWidth,spots=["b1","b2","b3"].map(id=>{const r=$(id).getBoundingClientRect();return{x:(r.left+r.width/2+scrollX)/W,y:r.top+r.height/2+scrollY,el:"button#"+id,w:id==="b2"?5:id==="b1"?2:1}});
+  const hourW=[1,1,0,0,0,1,2,4,7,9,10,9,8,9,10,9,7,5,4,3,3,2,2,1],now=Date.now(),out=[];
+  const pick=a=>{const t=a.reduce((s,v)=>s+v,0);let r=Math.random()*t;for(let i=0;i<a.length;i++){r-=a[i];if(r<=0)return i}return 0};
+  for(let s=0;s<90;s++){
+    const day=Math.floor(Math.random()*7),hr=pick(hourW),t0=now-day*864e5-((new Date().getHours()-hr+24)%24)*36e5-Math.random()*36e5,sid="demo"+s;
+    out.push({t:t0,type:"view",sid,page:"/"});
+    const n=1+Math.floor(Math.random()*5);
+    for(let i=0;i<n;i++){const sp=spots[pick(spots.map(x=>x.w))],j=()=>(Math.random()+Math.random()+Math.random()-1.5);
+      out.push({t:t0+(i+1)*7000,type:"click",sid,page:"/",x:Math.min(.99,Math.max(.01,sp.x+j()*.03)),y:Math.max(0,sp.y+j()*28),el:sp.el})}
+    [25,50,75,100].filter(()=>Math.random()<.6).forEach((m,i)=>out.push({t:t0+3000*i,type:"scroll",sid,page:"/",depth:m}));
+    out.push({t:t0+60000,type:"leave",sid,page:"/",dur:20+Math.floor(Math.random()*160),depth:[25,50,75,100][Math.floor(Math.random()*4)]});
+  }
+  out.sort((a,b)=>a.t-b.t);Pulse.push&&(()=>{const d=Pulse.getData().concat(out).sort((a,b)=>a.t-b.t);try{localStorage.setItem("pulse_events",JSON.stringify(d))}catch(e){}})();
+  render();
+}
+$("seed").onclick=seed;
+$("clr").onclick=()=>{Pulse.clear();render()};
+$("exp").onclick=()=>{const u=URL.createObjectURL(new Blob([JSON.stringify(Pulse.getData(),null,2)],{type:"application/json"}));const a=document.createElement("a");a.href=u;a.download="pulse-events.json";a.click()};
+$("theme").onclick=()=>{const r=document.documentElement,dark=getComputedStyle(r).getPropertyValue("--bg").trim()==="#0f1526";r.setAttribute("data-theme",dark?"light":"dark")};
+
+/* ============ Start ============ */
+Pulse.init();
+Pulse.onEvent(render);
+render();
+if(!Pulse.getData().some(e=>e.sid&&e.sid.startsWith("demo")) && Pulse.getData().length<=1) seed();
+addEventListener("resize",()=>{if(heatOn)drawHeat()});
+</script>
+</body>
+</html>
